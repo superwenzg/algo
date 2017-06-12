@@ -10,85 +10,134 @@
 #include <fstream>
 #include <iostream>
 
-
 using namespace std;
-typedef pair <double,double> Point;
-
 
 class Gaussian
 {
 public:
-    Gaussian(const int n)
-    :_nox(n)
+    Gaussian(const int coe)
+    :_Cnt_of_element(coe)
     {
-        _p = new double*[n];
-        _ans = new double[n+1];
+        _Ans_pos = new int[coe];
+        _Ans = new double[coe];
+        _Martix = new double*[coe];
         
-        for(int i=0;i<n;i++)
-        {
-            _ans[i] = 0;
-            _p[i] = new double[n+1];
-        }
+        for( int i = 0;i < coe; i++ ) _Martix[i] = new double[coe+1];
         
-        cout<<"输入参数"<<endl;
-        for(int i=0;i<n;i++)
-            for(int j=0;j<n+1;j++)
-                cin>>_p[i][j];
+        cout<<"input the martix"<<endl;
+        for( int i = 0;i < coe; i++ )
+            for( int j = 0;j <= coe ; j++ )
+                cin>>_Martix[i][j];
         
-
+        for( int i = 0;i < coe; i++)
+            _Ans[i] = 0,
+            _Ans_pos[i] = i;
     }
     
+    void desort(const int rows);
+    void sort(const int rows);
     void calculate();
+    void show();
 private:
-    int _nox;
-    double *_ans;
-    double **_p;
+    int _Cnt_of_element;
+    
+    int *_Ans_pos;
+    double *_Ans;
+    double **_Martix;
 };
+
+void Gaussian::show()
+{
+    cout<<"------------show--------------------"<<endl;
+    for(int i = 0;i < _Cnt_of_element;i++)
+        for(int j = 0;j <= _Cnt_of_element;j++)
+        {
+            cout<<_Martix[i][j];
+            j == _Cnt_of_element ? cout<<endl:cout<<'\t'<<'\t'<<'\t';
+        }
+    cout<<endl;
+}
+
+void Gaussian::sort(const int rows)
+{
+    double Max = _Martix[rows][rows];
+    const int cols = rows;
+    int X_pos = -1;
+    int Y_pos = -1;
+    
+    for(int i = rows;i < _Cnt_of_element;i++)
+        for(int j = rows;j < _Cnt_of_element;j++)
+        {
+            if( Max < _Martix[i][j] )
+            {
+                Max = _Martix[i][j];
+                X_pos = j;
+                Y_pos = i;
+            }
+        }
+    
+    if(Y_pos != -1)
+    {
+        double *M_temp;
+        M_temp = _Martix[rows];
+        _Martix[rows] = _Martix[Y_pos];
+        _Martix[Y_pos] = M_temp;
+    }
+    
+    if(X_pos != -1)
+    {
+        for(int i=0;i < _Cnt_of_element;i++)
+            swap (_Martix[i][cols] ,_Martix[i][X_pos]);
+        _Ans_pos[cols] = X_pos;
+        _Ans_pos[X_pos] = cols;
+    }
+}
+
+void Gaussian::desort(const int rows)
+{
+    sort(rows);
+    const int cows = rows;
+    double Ratio = 0;
+    
+    for(int i = rows+1;i < _Cnt_of_element;i++)
+    {
+        Ratio = 1. / _Martix[rows][cows] * _Martix[i][cows];
+        for( int j = cows;j <= _Cnt_of_element;j++)
+        {
+            _Martix[i][j] = _Martix[i][j] / Ratio - _Martix[rows][j];
+            if( abs(_Martix[i][j]) < 0.000000001 ) _Martix[i][j] =0;
+        }
+    }
+}
 
 void Gaussian::calculate()
 {
-    double ratio;
-    double temp;
+    for( int i = 0;i < _Cnt_of_element; i++ )
+        desort(i),show();
     
-    for(int i=0;i<_nox;i++)
+    const int Loop = _Cnt_of_element -1;
+    
+    for(int i = Loop;i >= 0;i--)
     {
-        for(int j=i+1;j<_nox;j++)
+        _Ans[i] = _Martix[i][_Cnt_of_element];//save b value;
+        for(int j = Loop; j > i;j--)//reduce already know value
         {
-            ratio = _p[i][i] / _p[j][i];
-            for(int k=i;k<_nox+1;k++)
-            {
-                _p[j][k] = _p[j][k]*ratio - _p[i][k];
-            }
+            _Ans[i] -= _Ans[j] * _Martix[i][j];
         }
+        _Ans[i] = _Ans[i] / _Martix[i][i];
     }
     
-    for(int i=_nox-1;i>=0;i--)
+    for(int i = 0;i < _Cnt_of_element;i++)
     {
-        _ans[i] = 0;
-        temp = 0;
-        
-        for(int j=_nox-1;j>=i;j--)
-        {
-            temp += _ans[j] * _p[i][j];
-        }
-        _ans[i] = ( _p[i][_nox] - temp ) / _p[i][i];
-        if ( isnan(_ans[i]) )
-        {
-            cout<<"不要搞事情"<<endl;
-            return ;
-        }
+        cout<<"The x pos is: "<<_Ans_pos[i]<<"res is: ";
+        cout<<_Ans[i]<<endl;
     }
-    
-    for(int i=0;i<_nox;i++)
-        printf("x%d: %.6lf\n",i,_ans[i]);
 }
 
 int main()
 {
-    int n;
-    cout<<"输入未知数个数"<<endl;
-    cin>>n;
-    
-    Gaussian g(n);
+    int N;
+    cin>>N;
+    Gaussian g(N);
     g.calculate();
 }
